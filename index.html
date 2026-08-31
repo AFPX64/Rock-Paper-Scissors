@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simulador Piedra, Papel o Tijera - Auditoría y Refactorización</title>
+</head>
+<body>
+  <h1>Simulador: Piedra, Papel o Tijera (Mejor de 3)</h1>
+  <p>Abre la consola de tu navegador (F12 o Ctrl+Shift+I) para ver la ejecución del juego.</p>
+
+  <script>
+    let victoriasUsuario = 0;
+    let victoriasMaquina = 0;
+
+    // CORRECCIÓN LÓGICA 1: Usar && en lugar de || para detener el bucle
+    // cuando cualquiera de los dos llegue a 3 victorias.
+    while (victoriasUsuario < 3 && victoriasMaquina < 3) {
+
+      let jugadaIngresada = prompt("Elige: Piedra, Papel o Tijera");
+      
+      // Validación si el usuario presiona "Cancelar"
+      if (jugadaIngresada === null) {
+        console.log("Juego cancelado por el usuario.");
+        break;
+      }
+
+      // CORRECCIÓN 2: Normalización estricta (convierte a minúsculas y remueve espacios)
+      let jugada = jugadaIngresada.toLowerCase().trim();
+
+      // Validar si la entrada es correcta
+      if (jugada !== "piedra" && jugada !== "papel" && jugada !== "tijera") {
+        console.log("Entrada inválida. Por favor escribe Piedra, Papel o Tijera.");
+        continue;
+      }
+
+      let azar = Math.random();
+      let jugadaMaquina = "";
+
+      if (azar < 0.33) {
+        jugadaMaquina = "piedra";
+      } else if (azar < 0.66) {
+        jugadaMaquina = "papel";
+      } else {
+        jugadaMaquina = "tijera";
+      }
+
+      // CORRECCIÓN 3: Reemplazado por Template Literals
+      console.log(`La máquina eligió: ${jugadaMaquina}`);
+
+      // Lógica de determinación de ganador del ronda
+      if (jugada === jugadaMaquina) {
+        console.log(`Empate en esta ronda. Marcador actual -> Usuario: ${victoriasUsuario} | Máquina: ${victoriasMaquina}`);
+      } else if (
+        (jugada === "piedra" && jugadaMaquina === "tijera") ||
+        (jugada === "papel" && jugadaMaquina === "piedra") ||
+        (jugada === "tijera" && jugadaMaquina === "papel")
+      ) {
+        // CORRECCIÓN 4: Variables acumuladoras
+        victoriasUsuario++;
+        console.log(`¡Ganaste la ronda! Marcador actual -> Usuario: ${victoriasUsuario} | Máquina: ${victoriasMaquina}`);
+      } else {
+        // CORRECCIÓN 4: Variables acumuladoras
+        victoriasMaquina++;
+        console.log(`La máquina gana la ronda. Marcador actual -> Usuario: ${victoriasUsuario} | Máquina: ${victoriasMaquina}`);
+      }
+    }
+
+    // CORRECCIÓN 5: Operador ternario para anunciar al campeón final
+    if (victoriasUsuario === 3 || victoriasMaquina === 3) {
+      let resultadoFinal = victoriasUsuario === 3 
+        ? "¡Felicidades! Has ganado el torneo al mejor de 3." 
+        : "La máquina ha ganado el torneo. ¡Inténtalo de nuevo!";
+        
+      console.log(resultadoFinal);
+      alert(resultadoFinal);
+    }
+  </script>
+</body>
+</html>
