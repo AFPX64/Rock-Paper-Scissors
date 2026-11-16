@@ -3,78 +3,217 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Simulador Piedra, Papel o Tijera - Auditoría y Refactorización</title>
+  <title>Piedra, Papel o Tijera | Mejor de 3</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --midnight: #0d1733; --panel: #121d42; --gold: #d4af37; --gold-light: #ecd27a;
+      --ivory: #f6f1e0; --muted: #a3abc4;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100vh; padding: 2rem 1rem;
+      display: flex; justify-content: center;
+      font-family: 'Plus Jakarta Sans', sans-serif; color: var(--ivory);
+      background: linear-gradient(135deg, var(--midnight), #2a1236) fixed;
+    }
+    main { width: 100%; max-width: 720px; text-align: center; }
+    :focus-visible { outline: 2px solid var(--gold-light); outline-offset: 3px; }
+
+    h1 { font-family: 'Cinzel', serif; font-size: clamp(1.6rem, 5vw, 2.4rem); letter-spacing: .04em; margin: 0 0 .25rem; color: var(--gold); }
+    .sub { margin: 0 0 1.75rem; color: var(--muted); }
+
+    /* Marcador */
+    .marcador {
+      display: inline-flex; align-items: center; gap: 1.1rem; padding: .55rem 1.6rem;
+      background: var(--panel); border: 2px solid var(--gold); border-radius: 999px;
+    }
+    .marcador span { font-size: .95rem; color: var(--muted); }
+    .marcador strong { font-family: 'Cinzel', serif; font-size: 1.9rem; line-height: 1.2; }
+
+    /* Arena */
+    .arena { display: flex; align-items: center; justify-content: center; gap: clamp(.5rem, 3vw, 1.75rem); margin: 2rem 0 1.25rem; }
+    .circulo {
+      width: clamp(110px, 29vw, 184px); aspect-ratio: 1; border-radius: 50%;
+      display: grid; place-items: center; background: var(--panel);
+      border: 6px solid var(--gold); --glow: rgba(212, 175, 55, .45);
+      transition: box-shadow .3s;
+    }
+    .circulo.pc { border-color: rgba(239, 68, 68, .6); --glow: rgba(239, 68, 68, .5); }
+    .circulo.gana { box-shadow: 0 0 38px var(--glow); }
+    .mano { width: 62%; }
+    .mano svg { display: block; width: 100%; height: auto; animation: pop .35s ease-out; }
+    .vacio { font-family: 'Cinzel', serif; font-size: 3rem; color: var(--muted); opacity: .5; }
+    .vs { width: clamp(64px, 14vw, 100px); flex: none; }
+
+    .mensaje { min-height: 3.2em; margin: 0 0 1.25rem; font-size: 1.05rem; }
+
+    /* Botones de jugada */
+    .jugadas { display: flex; justify-content: center; gap: 1rem; }
+    .jugada {
+      width: 92px; padding: .8rem .5rem .6rem; cursor: pointer;
+      background: var(--panel); color: var(--muted);
+      border: 2px solid rgba(212, 175, 55, .5); border-radius: 14px;
+      font: 600 .85rem 'Plus Jakarta Sans', sans-serif;
+      transition: transform .2s, border-color .2s, color .2s;
+    }
+    .jugada svg { display: block; width: 44px; height: 52px; margin: 0 auto .35rem; }
+    .jugada:hover:not(:disabled) { transform: translateY(-3px); border-color: var(--gold); color: var(--ivory); }
+    .jugada:disabled { opacity: .4; cursor: not-allowed; }
+
+    /* Resultado final */
+    .final { margin-top: 1.75rem; padding: 1.5rem; background: var(--panel); border: 2px solid var(--gold); border-radius: 14px; }
+    .final p { margin: 0 0 1rem; font-family: 'Cinzel', serif; font-size: 1.25rem; }
+    .btn-gold {
+      padding: .65rem 1.8rem; cursor: pointer; border: 1px solid var(--gold); border-radius: 999px;
+      background: var(--gold); color: var(--midnight); font: 700 1rem 'Plus Jakarta Sans', sans-serif;
+      transition: transform .2s, background-color .2s;
+    }
+    .btn-gold:hover { background: var(--gold-light); transform: translateY(-2px); }
+
+    @keyframes pop { from { transform: scale(.6); opacity: 0; } to { transform: none; opacity: 1; } }
+    @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+  </style>
 </head>
 <body>
-  <h1>Simulador: Piedra, Papel o Tijera (Mejor de 3)</h1>
-  <p>Abre la consola de tu navegador (F12 o Ctrl+Shift+I) para ver la ejecución del juego.</p>
+
+  <!-- Íconos reutilizables -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <symbol id="piedra" viewBox="0 0 120 140">
+        <path d="M13 87 26 47 58 27 96 42 108 82 83 110 36 112Z" fill="#8e98b4"/>
+        <path d="M26 47 58 27 68 62 36 77Z" fill="#b4bdd6"/>
+        <path d="M68 62 96 42 108 82 83 110 58 97Z" fill="#6b7491"/>
+        <path d="M36 77 58 97M68 62 58 97" stroke="#566082" stroke-width="3" fill="none"/>
+      </symbol>
+      <symbol id="papel" viewBox="0 0 120 140">
+        <rect x="28" y="22" width="64" height="96" rx="6" fill="#f6f1e0"/>
+        <path d="M76 22l16 16H76Z" fill="#cbd5e1"/>
+        <path d="M42 56h36M42 76h36M42 96h22" stroke="#a3abc4" stroke-width="5" stroke-linecap="round"/>
+      </symbol>
+      <symbol id="tijera" viewBox="0 0 120 140">
+        <path d="M36 98 76 8 84 12 46 102ZM84 98 44 8 36 12 74 102Z" fill="#dfe6f5"/>
+        <g fill="none" stroke="#ef4444" stroke-width="7"><circle cx="36" cy="118" r="16"/><circle cx="84" cy="118" r="16"/></g>
+        <circle cx="60" cy="58" r="6" fill="#d4af37"/>
+      </symbol>
+    </defs>
+  </svg>
+
+  <main>
+    <h1>Piedra, Papel o Tijera</h1>
+    <p class="sub">Mejor de 3. El primero en llegar a 3 victorias gana.</p>
+
+    <div class="marcador">
+      <span>Tú</span>
+      <strong id="puntos">0 : 0</strong>
+      <span>PC</span>
+    </div>
+
+    <div class="arena">
+      <div class="circulo" id="circuloUsuario"><div class="mano" id="manoUsuario"><span class="vacio">?</span></div></div>
+
+      <svg class="vs" viewBox="0 0 100 100" aria-hidden="true">
+        <polygon points="100,50 73.1,59.6 85.4,85.4 59.6,73.1 50,100 40.4,73.1 14.6,85.4 26.9,59.6 0,50 26.9,40.4 14.6,14.6 40.4,26.9 50,0 59.6,26.9 85.4,14.6 73.1,40.4" fill="#d4af37"/>
+        <text x="50" y="59" text-anchor="middle" font-family="Cinzel, serif" font-size="24" font-weight="700" fill="#0d1733">VS</text>
+      </svg>
+
+      <div class="circulo pc" id="circuloMaquina"><div class="mano" id="manoMaquina"><span class="vacio">?</span></div></div>
+    </div>
+
+    <p class="mensaje" id="mensaje" role="status">Elegí tu jugada para empezar.</p>
+
+    <div class="jugadas" id="jugadas">
+      <button class="jugada" data-jugada="piedra" aria-label="Piedra"><svg viewBox="0 0 120 140" aria-hidden="true"><use href="#piedra"/></svg>Piedra</button>
+      <button class="jugada" data-jugada="papel" aria-label="Papel"><svg viewBox="0 0 120 140" aria-hidden="true"><use href="#papel"/></svg>Papel</button>
+      <button class="jugada" data-jugada="tijera" aria-label="Tijera"><svg viewBox="0 0 120 140" aria-hidden="true"><use href="#tijera"/></svg>Tijera</button>
+    </div>
+
+    <div class="final" id="final" hidden>
+      <p id="resultadoFinal"></p>
+      <button class="btn-gold" id="reiniciar">Jugar de nuevo</button>
+    </div>
+  </main>
 
   <script>
+    const JUGADAS = {
+      piedra: { nombre: "Piedra", vence: "tijera" },
+      papel:  { nombre: "Papel",  vence: "piedra" },
+      tijera: { nombre: "Tijera", vence: "papel" }
+    };
+    const $ = (id) => document.getElementById(id);
+    const VACIO = '<span class="vacio">?</span>';
+
     let victoriasUsuario = 0;
     let victoriasMaquina = 0;
+    let terminado = false;
 
-    // CORRECCIÓN LÓGICA 1: Usar && en lugar de || para detener el bucle
-    // cuando cualquiera de los dos llegue a 3 victorias.
-    while (victoriasUsuario < 3 && victoriasMaquina < 3) {
+    const mano = (j) => `<svg viewBox="0 0 120 140" aria-hidden="true"><use href="#${j}"/></svg>`;
 
-      let jugadaIngresada = prompt("Elige: Piedra, Papel o Tijera");
-      
-      // Validación si el usuario presiona "Cancelar"
-      if (jugadaIngresada === null) {
-        console.log("Juego cancelado por el usuario.");
-        break;
-      }
+    function elegirJugadaMaquina() {
+      const azar = Math.random();
+      if (azar < 0.33) return "piedra";
+      if (azar < 0.66) return "papel";
+      return "tijera";
+    }
 
-      // CORRECCIÓN 2: Normalización estricta (convierte a minúsculas y remueve espacios)
-      let jugada = jugadaIngresada.toLowerCase().trim();
+    function jugar(jugada) {
+      if (terminado) return;
+      const maquina = elegirJugadaMaquina();
+      let texto;
 
-      // Validar si la entrada es correcta
-      if (jugada !== "piedra" && jugada !== "papel" && jugada !== "tijera") {
-        console.log("Entrada inválida. Por favor escribe Piedra, Papel o Tijera.");
-        continue;
-      }
+      $("circuloUsuario").classList.remove("gana");
+      $("circuloMaquina").classList.remove("gana");
+      $("manoUsuario").innerHTML = mano(jugada);
+      $("manoMaquina").innerHTML = mano(maquina);
 
-      let azar = Math.random();
-      let jugadaMaquina = "";
-
-      if (azar < 0.33) {
-        jugadaMaquina = "piedra";
-      } else if (azar < 0.66) {
-        jugadaMaquina = "papel";
-      } else {
-        jugadaMaquina = "tijera";
-      }
-
-      // CORRECCIÓN 3: Reemplazado por Template Literals
-      console.log(`La máquina eligió: ${jugadaMaquina}`);
-
-      // Lógica de determinación de ganador del ronda
-      if (jugada === jugadaMaquina) {
-        console.log(`Empate en esta ronda. Marcador actual -> Usuario: ${victoriasUsuario} | Máquina: ${victoriasMaquina}`);
-      } else if (
-        (jugada === "piedra" && jugadaMaquina === "tijera") ||
-        (jugada === "papel" && jugadaMaquina === "piedra") ||
-        (jugada === "tijera" && jugadaMaquina === "papel")
-      ) {
-        // CORRECCIÓN 4: Variables acumuladoras
+      if (jugada === maquina) {
+        texto = "Empate en esta ronda.";
+      } else if (JUGADAS[jugada].vence === maquina) {
         victoriasUsuario++;
-        console.log(`¡Ganaste la ronda! Marcador actual -> Usuario: ${victoriasUsuario} | Máquina: ${victoriasMaquina}`);
+        texto = "¡Ganaste la ronda!";
+        $("circuloUsuario").classList.add("gana");
       } else {
-        // CORRECCIÓN 4: Variables acumuladoras
         victoriasMaquina++;
-        console.log(`La máquina gana la ronda. Marcador actual -> Usuario: ${victoriasUsuario} | Máquina: ${victoriasMaquina}`);
+        texto = "La máquina gana la ronda.";
+        $("circuloMaquina").classList.add("gana");
       }
+
+      $("puntos").textContent = `${victoriasUsuario} : ${victoriasMaquina}`;
+      $("mensaje").textContent = `${JUGADAS[jugada].nombre} contra ${JUGADAS[maquina].nombre}. ${texto}`;
+
+      if (victoriasUsuario === 3 || victoriasMaquina === 3) terminar();
     }
 
-    // CORRECCIÓN 5: Operador ternario para anunciar al campeón final
-    if (victoriasUsuario === 3 || victoriasMaquina === 3) {
-      let resultadoFinal = victoriasUsuario === 3 
-        ? "¡Felicidades! Has ganado el torneo al mejor de 3." 
+    function terminar() {
+      terminado = true;
+      document.querySelectorAll(".jugada").forEach((b) => (b.disabled = true));
+      $("resultadoFinal").textContent = victoriasUsuario === 3
+        ? "¡Felicidades! Has ganado el torneo al mejor de 3."
         : "La máquina ha ganado el torneo. ¡Inténtalo de nuevo!";
-        
-      console.log(resultadoFinal);
-      alert(resultadoFinal);
+      $("final").hidden = false;
+      $("reiniciar").focus();
     }
+
+    function reiniciar() {
+      victoriasUsuario = 0;
+      victoriasMaquina = 0;
+      terminado = false;
+      $("puntos").textContent = "0 : 0";
+      $("manoUsuario").innerHTML = VACIO;
+      $("manoMaquina").innerHTML = VACIO;
+      $("circuloUsuario").classList.remove("gana");
+      $("circuloMaquina").classList.remove("gana");
+      $("mensaje").textContent = "Elegí tu jugada para empezar.";
+      $("final").hidden = true;
+      document.querySelectorAll(".jugada").forEach((b) => (b.disabled = false));
+      document.querySelector(".jugada").focus();
+    }
+
+    $("jugadas").addEventListener("click", (e) => {
+      const boton = e.target.closest(".jugada");
+      if (boton) jugar(boton.dataset.jugada);
+    });
+    $("reiniciar").addEventListener("click", reiniciar);
   </script>
 </body>
 </html>
